@@ -1,0 +1,21 @@
+html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
+body { display: flex; }
+[hidden] { display: none !important; }
+
+#panel { width: 320px; padding: 12px; overflow-y: auto; box-sizing: border-box; background: #fafafa; }
+#panel label { display: block; margin-bottom: 10px; font-size: 14px; }
+#panel input, #panel select, #panel textarea { width: 100%; box-sizing: border-box; padding: 6px; margin-top: 4px; }
+#panel button { padding: 8px 10px; margin: 4px 4px 0 0; cursor: pointer; }
+#detalle { border-top: 1px solid #ddd; margin-top: 10px; padding-top: 8px; font-size: 14px; }
+.aviso { background: #fff3cd; padding: 6px; border-radius: 4px; }
+
+/* El mapa necesita altura o no se ve */
+#mapa { flex: 1; height: 100%; }
+
+.leyenda { background: white; padding: 8px 10px; border-radius: 6px; line-height: 1.7; font-size: 13px; }
+.leyenda span { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; }
+
+@media (max-width: 700px) {
+  body { flex-direction: column-reverse; }
+  #panel { width: auto; max-height: 45%; }
+}
