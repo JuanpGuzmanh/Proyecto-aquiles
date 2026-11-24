@@ -1,0 +1,33 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "DES-01-L",
+        "incidente": "INC-01",
+        "vehiculos": ["moto", "automovil"],
+        "distancia_adicional_m": 640,
+        "verificado": "2026-11-21"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[-74.1890, 11.2262], [-74.1885, 11.2249], [-74.1858, 11.2251]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "DES-01-P",
+        "incidente": "INC-01",
+        "vehiculos": ["pesado"],
+        "distancia_adicional_m": 1100,
+        "verificado": "2026-11-21"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[-74.1895, 11.2270], [-74.1880, 11.2235], [-74.1850, 11.2240]]
+      }
+    }
+  ]
+}

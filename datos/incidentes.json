@@ -1,0 +1,58 @@
+[
+  {
+    "id": "INC-01",
+    "origen": "campo",
+    "tipo": "cierre_total",
+    "severidad": "roja",
+    "lat": 11.221056,
+    "lng": -74.179222,
+    "via": "Troncal del Caribe",
+    "sentido_afectado": "suroeste",
+    "horario_critico": "12:00-13:00",
+    "descripcion": "Cierre total de la vía por obras; vía de un solo sentido, destapada",
+    "foto": "datos/fotos/inc-01.jpeg",
+    "verificado": "2026-11-21"
+  },
+  {
+    "id": "INC-02",
+    "origen": "campo",
+    "tipo": "un_carril",
+    "severidad": "naranja",
+    "lat": 11.221208,
+    "lng": -74.177737,
+    "via": "Troncal del Caribe",
+    "sentido_afectado": "noreste",
+    "horario_critico": "12:00-13:00",
+    "descripcion": "Vías grandes reducidas a una vía pequeña por las obras; vía de un solo sentido, destapada",
+    "foto": "datos/fotos/inc-02.jpeg",
+    "verificado": "2026-11-21"
+  },
+  {
+    "id": "INC-03",
+    "origen": "campo",
+    "tipo": "malla_vial",
+    "severidad": "amarilla",
+    "lat": 11.221028,
+    "lng": -74.178639,
+    "via": "Troncal del Caribe",
+    "sentido_afectado": "noreste",
+    "horario_critico": "12:00-13:00",
+    "descripcion": "Pavimento destruido por las obras, con resaltos de tierra que frenan el tráfico",
+    "foto": "datos/fotos/inc-03.jpeg",
+    "verificado": "2026-11-21"
+  },
+  {
+    "id": "INC-04",
+    "origen": "campo",
+    "tipo": "un_carril",
+    "severidad": "naranja",
+    "lat": 11.221424,
+    "lng": -74.175518,
+    "via": "Glorieta Zúñiga",
+    "sentido_afectado": "noreste",
+    "horario_critico": "12:00-13:00",
+    "descripcion": "Trancón en la glorieta",
+    "foto": "datos/fotos/inc-04.jpeg",
+    "verificado": "2026-11-21"
+  }
+]
