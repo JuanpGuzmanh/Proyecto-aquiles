@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Radar de desvíos · Santa Marta</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <aside id="panel">
+    <h1>Radar de desvíos</h1>
+
+    <label>Buscar lugar
+      <input id="buscador" list="lista-lugares" placeholder="Ej: Universidad del Magdalena">
+    </label>
+    <datalist id="lista-lugares"></datalist>
+
+    <label>Tipo de vehículo
+      <select id="filtro-vehiculo">
+        <option value="moto">Motocicleta</option>
+        <option value="automovil">Automóvil particular</option>
+        <option value="pesado">Transporte público o carga</option>
+      </select>
+    </label>
+
+    <p>Incidentes activos: <strong id="contador">0</strong></p>
+
+    <div id="detalle"><p>Haz clic en un punto del mapa para ver su detalle.</p></div>
+
+    <section id="formulario" hidden>
+      <h2>Nuevo reporte</h2>
+      <p>Coordenada: <span id="coord"></span></p>
+      <form id="form-reporte">
+        <label>Tipo de afectación
+          <select name="tipo" required>
+            <option value="">Elegir...</option>
+            <option value="cierre_total">Cierre total u obra activa</option>
+            <option value="un_carril">Paso restringido a un carril</option>
+            <option value="malla_vial">Deterioro severo de la vía</option>
+          </select>
+        </label>
+
+<label>Sentido afectado
+  <select name="sentido" required>
+    <option value="">Elegir...</option>
+    <option value="noreste">Hacia el noreste</option>
+    <option value="suroeste">Hacia el suroeste</option>
+    <option value="noroeste">Hacia el noroeste</option>
+    <option value="sureste">Hacia el sureste</option>
+    <option value="ambos">Ambos sentidos</option>
+  </select>
+</label>
+
+        <label>Nivel de impacto
+          <select name="impacto" required>
+            <option value="">Elegir...</option>
+            <option value="alto">Alto</option>
+            <option value="medio">Medio</option>
+            <option value="bajo">Bajo</option>
+          </select>
+        </label>
+
+        <label>Descripción (máx. 200 caracteres)
+          <textarea name="descripcion" maxlength="200" rows="3" required></textarea>
+        </label>
+
+        <button type="submit">Guardar reporte</button>
+        <button type="button" id="btn-cancelar">Cancelar</button>
+      </form>
+    </section>
+
+    <div class="botones">
+      <button type="button" id="btn-exportar">Exportar reportes</button>
+      <button type="button" id="btn-importar">Importar reportes</button>
+      <input type="file" id="archivo-importar" accept="application/json" hidden>
+    </div>
+  </aside>
+
+  <div id="mapa"></div>
+
+  <!-- Leaflet primero, luego tus módulos; mapa.js al final porque usa a los demás -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="incidentes.js"></script>
+  <script src="desvios.js"></script>
+  <script src="mapa.js"></script>
+</body>
+</html>
