@@ -22,31 +22,36 @@ function esc(texto) {            // evita que un reporte inyecte HTML
   return d.innerHTML;
 }
 
+const NOMBRE_SEVERIDAD = { roja: 'Cierre total', naranja: 'Un carril', amarilla: 'Deterioro de la vía' };
+
 function fichaHTML(inc) {
   const verificado = inc.verificado
     ? `Verificado: ${esc(inc.verificado)}`
     : '<em>Sin verificar</em>';
   return `
-    <strong>${esc(inc.via)}</strong><br>
-    Tipo: ${esc(inc.tipo)}<br>
-    Sentido: ${esc(inc.sentido_afectado)}<br>
-    ${inc.horario_critico ? 'Horario crítico: ' + esc(inc.horario_critico) + '<br>' : ''}
-    ${inc.impacto ? 'Impacto: ' + esc(inc.impacto) + '<br>' : ''}
-    ${esc(inc.descripcion)}<br>
-    ${verificado}
-    ${inc.foto ? `<br><img src="${esc(inc.foto)}" width="220" alt="Foto del punto">` : ''}`;
+    <div class="ficha">
+      <span class="chip chip-${esc(inc.severidad)}">${NOMBRE_SEVERIDAD[inc.severidad] || ''}</span>
+      <strong class="ficha-via">${esc(inc.via)}</strong>
+      <span class="ficha-dato">Sentido: ${esc(inc.sentido_afectado)}</span>
+      ${inc.horario_critico ? `<span class="ficha-dato">Horario crítico: ${esc(inc.horario_critico)}</span>` : ''}
+      ${inc.impacto ? `<span class="ficha-dato">Impacto: ${esc(inc.impacto)}</span>` : ''}
+      <span class="ficha-dato">${esc(inc.descripcion)}</span>
+      <span class="ficha-dato">${verificado}</span>
+      ${inc.foto ? `<img src="${esc(inc.foto)}" alt="Foto del punto">` : ''}
+    </div>`;
 }
 
 // ---------- Marcadores ----------
 function dibujarIncidente(inc) {
-  const marcador = L.circleMarker([inc.lat, inc.lng], {   // Leaflet: [lat, lng]
-    radius: 10,
-    color: '#333',
-    weight: 2,
-    fillColor: COLORES[inc.severidad],
-    fillOpacity: 0.9,
-    bubblingMouseEvents: false   // evita que el clic abra también el formulario
-  });
+ const marcador = L.circleMarker([inc.lat, inc.lng], {   // Leaflet: [lat, lng]
+  radius: 11,
+  color: '#fff',
+  weight: 3,
+  fillColor: COLORES[inc.severidad],
+  fillOpacity: 0.95,
+  className: 'marcador',
+  bubblingMouseEvents: false   // evita que el clic abra también el formulario
+});
   marcador.bindPopup(fichaHTML(inc));
   marcador.on('click', () => seleccionarIncidente(inc));
   marcador.addTo(capaIncidentes);
