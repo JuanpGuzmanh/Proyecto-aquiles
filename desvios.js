@@ -14,16 +14,17 @@ async function cargarDesvios() {
   todosLosDesvios = geo.features;
 }
 
-const categoriasVehiculo = {
-  moto: ['motocicleta'],
-  automovil: ['carro_particular'],
-  pesado: ['transporte_publico', 'carga']
-};
-
 function desviosPara(idIncidente, vehiculo) {
-  const permitidos = categoriasVehiculo[vehiculo] || [];
   return todosLosDesvios.filter(d =>
-    d.properties.incidente_id === idIncidente &&
-    d.properties.vehiculos_permitidos.some(tipo => permitidos.includes(tipo))
+    d.properties.incidente === idIncidente &&
+    d.properties.vehiculos.includes(vehiculo)
+  );
+}
+
+function restriccionesDesvioPara(idIncidente, vehiculo) {
+  return todosLosDesvios.filter(d =>
+    d.properties.incidente === idIncidente &&
+    Array.isArray(d.properties.no_apto_para) &&
+    d.properties.no_apto_para.includes(vehiculo)
   );
 }

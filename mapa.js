@@ -78,9 +78,14 @@ function actualizarDesvioSeleccionado() {
   const desvios = desviosPara(incidenteSeleccionado.id, vehiculo);
   dibujarDesvio(desvios);
   if (aviso) {
-    aviso.textContent = desvios.length
-      ? 'Desvío disponible marcado en azul.'
-      : 'No hay un desvío cargado para este incidente y vehículo.';
+    if (desvios.length) {
+      aviso.textContent = 'Desvío disponible marcado en azul.';
+    } else {
+      const restricciones = restriccionesDesvioPara(incidenteSeleccionado.id, vehiculo);
+      aviso.textContent = restricciones.length
+        ? restricciones.map(desvio => desvio.properties.observaciones).join(' ')
+        : 'No hay un desvío cargado para este incidente y vehículo.';
+    }
   }
 }
 
