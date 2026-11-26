@@ -7,6 +7,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 const capaMarcadores = L.layerGroup().addTo(mapa);
 const capaDesvios = L.layerGroup().addTo(mapa);
+let incidenteSeleccionado = null;
 
 function obtenerColorSeveridad(severidad) {
   const colores = {
@@ -30,7 +31,8 @@ function dibujarIncidentes(incidentes) {
       color: '#ffffff',
       weight: 2,
       opacity: 1,
-      fillOpacity: 0.9
+      fillOpacity: 0.9,
+      bubblingMouseEvents: false
     });
 
     marcador.on('click', () => {
@@ -45,23 +47,55 @@ function dibujarDesvio(featureGeoJSON) {
   capaDesvios.clearLayers();
   if (!featureGeoJSON) return;
 
-  L.geoJSON(featureGeoJSON, {
-    style: {
-      color: '#0284c7',
-      weight: 5,
-      dashArray: '8, 6'
-    }
-  }).addTo(capaDesvios);
+  const desvios = Array.isArray(featureGeoJSON) ? featureGeoJSON : [featureGeoJSON];
+  desvios.forEach((desvio) => {
+    L.geoJSON(desvio, {
+      style: {
+        color: '#0284c7',
+        weight: 5,
+        dashArray: '8, 6'
+      }
+    }).addTo(capaDesvios);
+  });
+
+  const limites = capaDesvios.getBounds();
+  if (limites.isValid()) {
+    mapa.fitBounds(limites, { padding: [30, 30], maxZoom: 16 });
+  }
 }
 
+function actualizarDesvioSeleccionado() {
+  const aviso = document.getElementById('aviso-desvio');
+  if (!incidenteSeleccionado || incidenteSeleccionado.origen === 'ciudadano') {
+    dibujarDesvio(null);
+    if (aviso && incidenteSeleccionado) {
+      aviso.textContent = 'Este reporte ciudadano no tiene un desvío asociado.';
+    }
+    return;
+  }
+
+  const vehiculo = document.getElementById('filtro-vehiculo').value;
+  const desvios = desviosPara(incidenteSeleccionado.id, vehiculo);
+  dibujarDesvio(desvios);
+  if (aviso) {
+    aviso.textContent = desvios.length
+      ? 'Desvío disponible marcado en azul.'
+      : 'No hay un desvío cargado para este incidente y vehículo.';
+  }
+}
+
+document.getElementById('filtro-vehiculo').addEventListener('change', actualizarDesvioSeleccionado);
+
+mapa.on('click', () => {
+  incidenteSeleccionado = null;
+  dibujarDesvio(null);
+});
+
 function mostrarDetalleEnPanel(inc) {
+  incidenteSeleccionado = inc;
   document.getElementById('formulario').hidden = true;
   const contenedor = document.getElementById('detalle');
   contenedor.hidden = false;
-
-  const avisoDesvio = inc.origen === 'ciudadano'
-    ? '<p><em>&lt;desvío sin verificar&gt;</em></p>'
-    : '<p>Selecciona tu vehículo arriba para ver el desvío recomendado.</p>';
 
   const rutaFoto = inc.foto && inc.foto.startsWith('data:image')
     ? inc.foto
@@ -76,8 +110,10 @@ function mostrarDetalleEnPanel(inc) {
     <p>${inc.descripcion}</p>
     ${inc.foto ? `<img src="${rutaFoto}" alt="Evidencia" style="width:100%; margin-top:8px; border-radius:6px;">` : ''}
     <hr style="margin: 10px 0;">
-    ${avisoDesvio}
+    <p id="aviso-desvio"></p>
   `;
+
+  actualizarDesvioSeleccionado();
 
   if (inc.origen === 'ciudadano') {
     const botonEliminar = document.createElement('button');

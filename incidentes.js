@@ -6,10 +6,20 @@ let coordSeleccionada = null;
 async function inicializarIncidentes() {
   try {
     const res = await fetch('datos/incidentes.json');
+    if (!res.ok) {
+      throw new Error(`No se pudo cargar incidentes.json: ${res.status}`);
+    }
     incidentesCampo = await res.json();
   } catch (err) {
     console.error('Error cargando incidentes.json:', err);
   }
+
+  try {
+    await cargarDesvios();
+  } catch (err) {
+    console.error('Error cargando desvios.geojson:', err);
+  }
+
   renderizarTodosLosIncidentes();
 }
 

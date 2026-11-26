@@ -4,29 +4,114 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "DES-01-L",
-        "incidente": "INC-01",
-        "vehiculos": ["moto", "automovil"],
-        "distancia_adicional_m": 640,
-        "verificado": "2026-11-21"
+        "id": "DES-01",
+        "incidente_id": "INC-01",
+        "distance_adicional_m": 100,
+        "vehiculos_permitidos": [
+          "motocicleta",
+          "carro_particular",
+          "transporte_publico",
+          "carga"
+        ],
+        "descripcion": "Desvio por glorieta y via alternativa, siguiendo las calles existentes."
       },
       "geometry": {
         "type": "LineString",
-        "coordinates": [[-74.1890, 11.2262], [-74.1885, 11.2249], [-74.1858, 11.2251]]
+        "coordinates": [
+          [
+            -74.177278,
+            11.221639
+          ],
+          [
+            -74.17575,
+            11.222278
+          ],
+          [
+            -74.175833,
+            11.222056
+          ],
+          [
+            -74.176,
+            11.221917
+          ],
+          [
+            -74.181138,
+            11.221063
+          ],
+          [
+            -74.187,
+            11.219667
+          ],
+          [
+            -74.187194,
+            11.219778
+          ],
+          [
+            -74.187361,
+            11.219667
+          ],
+          [
+            -74.187501,
+            11.219376
+          ],
+          [
+            -74.189521,
+            11.219043
+          ],
+          [
+            -74.190003,
+            11.219094
+          ],
+          [
+            -74.190399,
+            11.21906
+          ],
+          [
+            -74.190615,
+            11.218619
+          ],
+          [
+            -74.190631,
+            11.218171
+          ],
+          [
+            -74.197833,
+            11.21675
+          ]
+        ]
       }
     },
     {
       "type": "Feature",
       "properties": {
-        "id": "DES-01-P",
-        "incidente": "INC-01",
-        "vehiculos": ["pesado"],
-        "distancia_adicional_m": 1100,
-        "verificado": "2026-11-21"
+        "id": "DES-02",
+        "incidente_id": "INC-02",
+        "distance_adicional_m": 271.02,
+        "vehiculos_permitidos": [
+          "motocicleta",
+          "carro_particular",
+          "transporte_publico",
+          "carga"
+        ],
+        "descripcion": "Desvio por via alternativa con una curva.",
+        "observaciones": "El transporte publico utiliza esta misma via debido a que no existe otra ruta alternativa de acceso."
       },
       "geometry": {
         "type": "LineString",
-        "coordinates": [[-74.1895, 11.2270], [-74.1880, 11.2235], [-74.1850, 11.2240]]
+        "coordinates": [
+          [
+            -74.175128,
+            11.221582
+          ],
+          [
+            -74.173523,
+            11.222162
+          ],
+          [
+            -74.173482,
+            11.221925
+          ]
+        ]
       }
     }
   ]
