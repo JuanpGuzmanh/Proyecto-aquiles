@@ -1,5 +1,12 @@
 [
-  { "nombre": "Universidad del Magdalena", "lat": 11.2210, "lng": -74.1866 },
-  { "nombre": "Avenida del Ferrocarril", "lat": 11.2400, "lng": -74.2050 },
-  { "nombre": "Calle 30", "lat": 11.2268, "lng": -74.1871 }
+    { "nombre": "Universidad del Magdalena", "lat": 11.2210, "lng": -74.1866 },
+    { "nombre": "Avenida del Ferrocarril", "lat": 11.2400, "lng": -74.2050 },
+    { "nombre": "Terminal de Transporte", "lat": 11.2211, "lng": -74.1811 },
+    { "nombre": "Parque del Agua", "lat": 11.2231, "lng": -74.1746 },
+    { "nombre": "Quinta de San Pedro Alejandrino", "lat": 11.2283, "lng": -74.1774 },
+    { "nombre": "Escuela Normal Superior San Pedro Alejandrino", "lat": 11.2265, "lng": -74.1755 },
+    { "nombre": "Institución Educativa Distrital Juan Maiguel de Osuna", "lat": 11.2243, "lng": -74.1746 },
+    { "nombre": "Montpellier Conjunto Cerrado", "lat": 11.2188, "lng": -74.1760 },
+    { "nombre": "Universidad Sergio Arboleda", "lat": 11.2188, "lng": -74.1785 },
+    { "nombre": "Centro Comercial Buenavista", "lat": 11.2286, "lng": -74.1733 }
 ]
