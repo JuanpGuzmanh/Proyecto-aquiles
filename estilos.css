@@ -209,3 +209,47 @@ body { display: flex; }
   }
   #panel > h1 { font-size: 20px; padding: 12px 16px; }
 }
+
+.campo-foto { margin-bottom: 14px; }
+.etiqueta-campo { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; color: var(--tinta-suave); }
+.acciones-foto { display: flex; gap: 8px; }
+.acciones-foto button { flex: 1; margin: 0; font-size: 14px; }
+
+.error-texto {
+  margin: 6px 0 0;
+  padding: 6px 8px;
+  font-size: 13px;
+  color: #b71c1c;
+  background: #fdecea;
+  border-left: 3px solid var(--roja);
+  border-radius: 4px;
+}
+
+.preview-foto {
+  margin-top: 10px;
+  padding: 8px;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.preview-foto img {
+  display: block;
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+#panel button.btn-secundario-peligro {
+  width: 100%;
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--roja);
+  border-color: var(--roja);
+}
+
+#panel button.btn-secundario-peligro:hover { background: #fdecea; }

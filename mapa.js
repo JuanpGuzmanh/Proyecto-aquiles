@@ -137,6 +137,71 @@ async function iniciarBuscador() {
 }
 
 // ---------- Reporte ciudadano ----------
+let fotoPendiente = '';
+
+function mostrarErrorFoto(mensaje) {
+  const el = document.getElementById('error-foto');
+  if (!mensaje) {
+    el.textContent = '';
+    el.hidden = true;
+    return;
+  }
+  el.textContent = mensaje;
+  el.hidden = false;
+}
+
+function limpiarFotoFormulario() {
+  fotoPendiente = '';
+  document.getElementById('input-camara').value = '';
+  document.getElementById('input-galeria').value = '';
+  document.getElementById('img-preview').src = '';
+  document.getElementById('contenedor-preview').hidden = true;
+  mostrarErrorFoto('');
+}
+
+document.getElementById('btn-camara').addEventListener('click', () => {
+  document.getElementById('input-camara').click();
+});
+
+document.getElementById('btn-galeria').addEventListener('click', () => {
+  document.getElementById('input-galeria').click();
+});
+
+document.getElementById('btn-quitar-foto').addEventListener('click', limpiarFotoFormulario);
+
+async function procesarArchivoFoto(e) {
+  const archivo = e.target.files[0];
+  if (!archivo) return;
+
+  mostrarErrorFoto('');
+
+  if (!archivo.type.startsWith('image/')) {
+    limpiarFotoFormulario();
+    mostrarErrorFoto('El archivo seleccionado no es una imagen válida.');
+    return;
+  }
+
+  const MAX_MB = 15;
+  if (archivo.size > MAX_MB * 1024 * 1024) {
+    limpiarFotoFormulario();
+    mostrarErrorFoto(`La imagen supera los ${MAX_MB} MB permitidos.`);
+    return;
+  }
+
+  try {
+    fotoPendiente = await comprimirImagen(archivo, 720, 0.7);
+    document.getElementById('img-preview').src = fotoPendiente;
+    document.getElementById('contenedor-preview').hidden = false;
+  } catch (err) {
+    console.error(err);
+    limpiarFotoFormulario();
+    mostrarErrorFoto('No se pudo procesar la foto. Intenta con otra imagen.');
+  }
+}
+
+document.getElementById('input-camara').addEventListener('change', procesarArchivoFoto);
+document.getElementById('input-galeria').addEventListener('change', procesarArchivoFoto);
+
 mapa.on('click', (e) => {
   if (!SECTOR.contains(e.latlng)) {
     alert('Ese punto está fuera del sector.');
@@ -145,6 +210,7 @@ mapa.on('click', (e) => {
   puntoPendiente = { lat: e.latlng.lat, lng: e.latlng.lng };
   document.getElementById('coord').textContent =
     puntoPendiente.lat.toFixed(5) + ', ' + puntoPendiente.lng.toFixed(5);
+  limpiarFotoFormulario();
   document.getElementById('formulario').hidden = false;
 });
 
@@ -157,15 +223,23 @@ document.getElementById('form-reporte').addEventListener('submit', (e) => {
     impacto: f.impacto.value,
     descripcion: f.descripcion.value,
     lat: puntoPendiente.lat,
-    lng: puntoPendiente.lng
+    lng: puntoPendiente.lng,
+    foto: fotoPendiente
   });
   if (error) {
     alert(error);
     return;
   }
   e.target.reset();
+  limpiarFotoFormulario();
   document.getElementById('formulario').hidden = true;
   refrescar();
+});
+
+document.getElementById('btn-cancelar').addEventListener('click', () => {
+  document.getElementById('form-reporte').reset();
+  limpiarFotoFormulario();
+  document.getElementById('formulario').hidden = true;
 });
 
 document.getElementById('btn-cancelar').addEventListener('click', () => {
