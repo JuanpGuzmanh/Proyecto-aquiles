@@ -78,4 +78,13 @@ function mostrarDetalleEnPanel(inc) {
     <hr style="margin: 10px 0;">
     ${avisoDesvio}
   `;
+
+  if (inc.origen === 'ciudadano') {
+    const botonEliminar = document.createElement('button');
+    botonEliminar.type = 'button';
+    botonEliminar.className = 'btn-eliminar';
+    botonEliminar.textContent = 'Eliminar reporte';
+    botonEliminar.addEventListener('click', () => eliminarReporteCiudadano(inc.id));
+    contenedor.appendChild(botonEliminar);
+  }
 }

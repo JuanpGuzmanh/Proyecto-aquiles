@@ -114,6 +114,13 @@ body { display: flex; }
 }
 #panel button[type="submit"]:hover { background: #17415a; }
 
+#panel button.btn-eliminar {
+  color: #fff;
+  background: var(--roja);
+  border-color: var(--roja);
+}
+#panel button.btn-eliminar:hover { background: #b71c1c; }
+
 .botones {
   margin-top: 16px;
   padding-top: 14px;

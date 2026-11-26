@@ -25,6 +25,21 @@ function renderizarTodosLosIncidentes() {
   }
 }
 
+function eliminarReporteCiudadano(id) {
+  if (!confirm('¿Seguro que quieres eliminar este reporte ciudadano?')) return;
+
+  const reportes = obtenerReportesGuardados();
+  const actualizados = reportes.filter(
+    (reporte) => reporte.origen !== 'ciudadano' || reporte.id !== id
+  );
+  if (actualizados.length === reportes.length) return;
+
+  localStorage.setItem(CLAVE_STORAGE, JSON.stringify(actualizados));
+  renderizarTodosLosIncidentes();
+  const detalle = document.getElementById('detalle');
+  detalle.innerHTML = '<p>Haz clic en un punto del mapa para ver su detalle.</p>';
+}
+
 // 2. Abrir tu sección #formulario al hacer clic en el mapa
 mapa.on('click', (e) => {
   coordSeleccionada = e.latlng;
