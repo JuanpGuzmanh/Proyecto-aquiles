@@ -65,7 +65,10 @@
         <label>Descripción (máx. 200 caracteres)
           <textarea name="descripcion" maxlength="200" rows="3" required></textarea>
         </label>
-
+        
+          <label>Foto (Cámara o Galería)
+          <input type="file" id="rep-foto" accept="image/*">
+        </label>
         <button type="submit">Guardar reporte</button>
         <button type="button" id="btn-cancelar">Cancelar</button>
       </form>
@@ -82,8 +85,8 @@
 
   <!-- Leaflet primero, luego tus módulos; mapa.js al final porque usa a los demás -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="incidentes.js"></script>
   <script src="desvios.js"></script>
   <script src="mapa.js"></script>
+  <script src="incidentes.js"></script>
 </body>
 </html>
