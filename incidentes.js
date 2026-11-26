@@ -1,27 +1,53 @@
-const CLAVE = 'reportes_radar';
+const CLAVE_STORAGE = 'radar_desvios_reportes';
 let incidentesCampo = [];
+let coordSeleccionada = null;
 
-const SEVERIDAD_POR_TIPO = {
-  cierre_total: 'roja',
-  un_carril: 'naranja',
-  malla_vial: 'amarilla'
-};
+// 1. Cargar datos iniciales (campo + localStorage)
+async function inicializarIncidentes() {
+  try {
+    const res = await fetch('datos/incidentes.json');
+    if (!res.ok) {
+      throw new Error(`No se pudo cargar incidentes.json: ${res.status}`);
+    }
+    incidentesCampo = await res.json();
+  } catch (err) {
+    console.error('Error cargando incidentes.json:', err);
+  }
 
-async function cargarIncidentesCampo() {
-  const respuesta = await fetch('datos/incidentes.json');
-  incidentesCampo = await respuesta.json();
+  try {
+    await cargarDesvios();
+  } catch (err) {
+    console.error('Error cargando desvios.geojson:', err);
+  }
+
+  renderizarTodosLosIncidentes();
 }
 
-function leerReportes() {
-  try {
-    return JSON.parse(localStorage.getItem(CLAVE) || '[]');
-  } catch (e) {
-    return [];
+function obtenerReportesGuardados() {
+  const datos = localStorage.getItem(CLAVE_STORAGE);
+  return datos ? JSON.parse(datos) : [];
+}
+
+function renderizarTodosLosIncidentes() {
+  const todos = [...incidentesCampo, ...obtenerReportesGuardados()];
+  if (typeof dibujarIncidentes === 'function') {
+    dibujarIncidentes(todos);
   }
 }
 
-function todosLosIncidentes() {
-  return [...incidentesCampo, ...leerReportes()];
+function eliminarReporteCiudadano(id) {
+  if (!confirm('¿Seguro que quieres eliminar este reporte ciudadano?')) return;
+
+  const reportes = obtenerReportesGuardados();
+  const actualizados = reportes.filter(
+    (reporte) => reporte.origen !== 'ciudadano' || reporte.id !== id
+  );
+  if (actualizados.length === reportes.length) return;
+
+  localStorage.setItem(CLAVE_STORAGE, JSON.stringify(actualizados));
+  renderizarTodosLosIncidentes();
+  const detalle = document.getElementById('detalle');
+  detalle.innerHTML = '<p>Haz clic en un punto del mapa para ver su detalle.</p>';
 }
 
 // Comprime y redimensiona la imagen en cliente para no llenar localStorage
@@ -74,11 +100,12 @@ function guardarReporte(d) {
   reportes.push({
     id: 'CIU-' + Date.now(),
     origen: 'ciudadano',
-    tipo: d.tipo,
-    severidad: SEVERIDAD_POR_TIPO[d.tipo],
-    lat: d.lat,
-    lng: d.lng,
+    tipo: form.tipo.value,
+    severidad: mapaSeveridad[form.impacto.value] || 'amarilla',
+    lat: Number(coordSeleccionada.lat.toFixed(6)),
+    lng: Number(coordSeleccionada.lng.toFixed(6)),
     via: 'Reporte ciudadano',
+<<<<<<< HEAD
     sentido_afectado: d.sentido,
     impacto: d.impacto,
     descripcion: d.descripcion.trim(),
@@ -96,41 +123,89 @@ function guardarReporte(d) {
   }
 
   return null;
+=======
+    sentido_afectado: form.sentido.value,
+    descripcion: form.descripcion.value.trim(),
+    foto: fotoBase64,
+    verificado: new Date().toISOString().split('T')[0]
+  };
+
+  const guardados = obtenerReportesGuardados();
+  guardados.push(nuevoReporte);
+  localStorage.setItem(CLAVE_STORAGE, JSON.stringify(guardados));
+
+  form.reset();
+  renderizarTodosLosIncidentes();
+  mostrarDetalleEnPanel(nuevoReporte);
+});
+
+// 4. Compresor de imágenes para celular
+function comprimirImagen(archivo, maxAncho) {
+  return new Promise((resolve) => {
+    const lector = new FileReader();
+    lector.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const escala = Math.min(1, maxAncho / img.width);
+        canvas.width = img.width * escala;
+        canvas.height = img.height * escala;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = e.target.result;
+    };
+    lector.readAsDataURL(archivo);
+  });
+>>>>>>> dddb460f73ac4f9e10f90f61cd49a037a518be19
 }
 
-function exportarReportes() {
-  const texto = JSON.stringify(leerReportes(), null, 2);
-  const blob = new Blob([texto], { type: 'application/json' });
-  const enlace = document.createElement('a');
-  enlace.href = URL.createObjectURL(blob);
-  enlace.download = 'reportes.json';
-  enlace.click();
-  URL.revokeObjectURL(enlace.href);
-}
+// 5. Exportar e Importar JSON usando tus botones
+document.getElementById('btn-exportar').addEventListener('click', () => {
+  const datos = obtenerReportesGuardados();
+  const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `reportes-santa-marta-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
 
-function importarReportes(archivo, alTerminar) {
+document.getElementById('btn-importar').addEventListener('click', () => {
+  document.getElementById('archivo-importar').click();
+});
+
+document.getElementById('archivo-importar').addEventListener('change', (e) => {
+  const archivo = e.target.files[0];
+  if (!archivo) return;
+
   const lector = new FileReader();
-  lector.onload = () => {
+  lector.onload = (ev) => {
     try {
-      const nuevos = JSON.parse(lector.result);
-      if (!Array.isArray(nuevos)) throw new Error('Formato inválido');
+      const importados = JSON.parse(ev.target.result);
+      const actuales = obtenerReportesGuardados();
+      const idsExistentes = new Set(actuales.map((r) => r.id));
 
-      const actuales = leerReportes();
-      const ids = new Set(actuales.map(r => r.id));
       let agregados = 0;
-
-      nuevos.forEach(r => {
-        if (r.id && !ids.has(r.id)) {   // se compara por id, sin duplicar
-          actuales.push(r);
-          ids.add(r.id);
+      importados.forEach((rep) => {
+        if (rep.id && !idsExistentes.has(rep.id)) {
+          actuales.push(rep);
+          idsExistentes.add(rep.id);
           agregados++;
         }
       });
-      localStorage.setItem(CLAVE, JSON.stringify(actuales));
-      alTerminar(agregados);
-    } catch (e) {
-      alert('El archivo no es un JSON de reportes válido.');
+
+      localStorage.setItem(CLAVE_STORAGE, JSON.stringify(actuales));
+      renderizarTodosLosIncidentes();
+      alert(`Se importaron ${agregados} reportes nuevos sin duplicados.`);
+    } catch (err) {
+      alert('El archivo JSON no tiene un formato válido.');
     }
+    e.target.value = '';
   };
   lector.readAsText(archivo);
-}
+});
+
+inicializarIncidentes();

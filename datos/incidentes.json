@@ -10,7 +10,7 @@
     "sentido_afectado": "suroeste",
     "horario_critico": "12:00-13:00",
     "descripcion": "Cierre total de la vía por obras; vía de un solo sentido, destapada",
-    "foto": "datos/fotos/inc-01.jpeg",
+    "foto": "fotos/inc-01.jpeg",
     "verificado": "2026-11-21"
   },
   {
@@ -24,7 +24,7 @@
     "sentido_afectado": "noreste",
     "horario_critico": "12:00-13:00",
     "descripcion": "Vías grandes reducidas a una vía pequeña por las obras; vía de un solo sentido, destapada",
-    "foto": "datos/fotos/inc-02.jpeg",
+    "foto": "fotos/inc-02.jpeg",
     "verificado": "2026-11-21"
   },
   {
@@ -32,13 +32,13 @@
     "origen": "campo",
     "tipo": "malla_vial",
     "severidad": "amarilla",
-    "lat": 11.221028,
-    "lng": -74.178639,
+    "lat": 11.221660,
+    "lng": -74.175097,
     "via": "Troncal del Caribe",
     "sentido_afectado": "noreste",
     "horario_critico": "12:00-13:00",
     "descripcion": "Pavimento destruido por las obras, con resaltos de tierra que frenan el tráfico",
-    "foto": "datos/fotos/inc-03.jpeg",
+    "foto": "fotos/inc-03.jpeg",
     "verificado": "2026-11-21"
   },
   {
@@ -52,7 +52,7 @@
     "sentido_afectado": "noreste",
     "horario_critico": "12:00-13:00",
     "descripcion": "Trancón en la glorieta",
-    "foto": "datos/fotos/inc-04.jpeg",
+    "foto": "fotos/inc-04.jpeg",
     "verificado": "2026-11-21"
   }
 ]

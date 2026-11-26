@@ -1,108 +1,99 @@
-// ---------- Configuración (ajusten con su corredor) ----------
-const CENTRO = [11.2212, -74.1774];
-const SECTOR = L.latLngBounds([11.212, -74.188], [11.230, -74.167]); // suroeste, noreste
-const COLORES = { roja: '#d32f2f', naranja: '#f57c00', amarilla: '#fbc02d' };
+const mapa = L.map('mapa').setView([11.2268, -74.1871], 15);
 
-// ---------- Mapa base con OpenStreetMap ----------
-const mapa = L.map('mapa').setView(CENTRO, 16);
-
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
-  attribution: '&copy; Colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  attribution: '&copy; OpenStreetMap contributors'
 }).addTo(mapa);
 
-const capaIncidentes = L.layerGroup().addTo(mapa);
-let capaDesvio = null;
-let puntoPendiente = null;
+const capaMarcadores = L.layerGroup().addTo(mapa);
+const capaDesvios = L.layerGroup().addTo(mapa);
+let incidenteSeleccionado = null;
 
-// ---------- Utilidades ----------
-function esc(texto) {            // evita que un reporte inyecte HTML
-  const d = document.createElement('div');
-  d.textContent = texto ?? '';
-  return d.innerHTML;
+function obtenerColorSeveridad(severidad) {
+  const colores = {
+    roja: '#dc2626',
+    naranja: '#f97316',
+    amarilla: '#eab308'
+  };
+  return colores[severidad] || '#64748b';
 }
 
-const NOMBRE_SEVERIDAD = { roja: 'Cierre total', naranja: 'Un carril', amarilla: 'Deterioro de la vía' };
+function dibujarIncidentes(incidentes) {
+  capaMarcadores.clearLayers();
+  document.getElementById('contador').textContent = incidentes.length;
 
-function fichaHTML(inc) {
-  const verificado = inc.verificado
-    ? `Verificado: ${esc(inc.verificado)}`
-    : '<em>Sin verificar</em>';
-  return `
-    <div class="ficha">
-      <span class="chip chip-${esc(inc.severidad)}">${NOMBRE_SEVERIDAD[inc.severidad] || ''}</span>
-      <strong class="ficha-via">${esc(inc.via)}</strong>
-      <span class="ficha-dato">Sentido: ${esc(inc.sentido_afectado)}</span>
-      ${inc.horario_critico ? `<span class="ficha-dato">Horario crítico: ${esc(inc.horario_critico)}</span>` : ''}
-      ${inc.impacto ? `<span class="ficha-dato">Impacto: ${esc(inc.impacto)}</span>` : ''}
-      <span class="ficha-dato">${esc(inc.descripcion)}</span>
-      <span class="ficha-dato">${verificado}</span>
-      ${inc.foto ? `<img src="${esc(inc.foto)}" alt="Foto del punto">` : ''}
-    </div>`;
+  incidentes.forEach((inc) => {
+    const color = obtenerColorSeveridad(inc.severidad);
+
+    const marcador = L.circleMarker([inc.lat, inc.lng], {
+      radius: 10,
+      fillColor: color,
+      color: '#ffffff',
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.9,
+      bubblingMouseEvents: false
+    });
+
+    marcador.on('click', () => {
+      mostrarDetalleEnPanel(inc);
+    });
+
+    marcador.addTo(capaMarcadores);
+  });
 }
 
-// ---------- Marcadores ----------
-function dibujarIncidente(inc) {
- const marcador = L.circleMarker([inc.lat, inc.lng], {   // Leaflet: [lat, lng]
-  radius: 11,
-  color: '#fff',
-  weight: 3,
-  fillColor: COLORES[inc.severidad],
-  fillOpacity: 0.95,
-  className: 'marcador',
-  bubblingMouseEvents: false   // evita que el clic abra también el formulario
-});
-  marcador.bindPopup(fichaHTML(inc));
-  marcador.on('click', () => seleccionarIncidente(inc));
-  marcador.addTo(capaIncidentes);
-}
+function dibujarDesvio(featureGeoJSON) {
+  capaDesvios.clearLayers();
+  if (!featureGeoJSON) return;
 
-function refrescar() {
-  capaIncidentes.clearLayers();
-  const lista = todosLosIncidentes();
-  lista.forEach(dibujarIncidente);
-  document.getElementById('contador').textContent = lista.length;
-}
+  const desvios = Array.isArray(featureGeoJSON) ? featureGeoJSON : [featureGeoJSON];
+  desvios.forEach((desvio) => {
+    L.geoJSON(desvio, {
+      style: {
+        color: '#0284c7',
+        weight: 5,
+        dashArray: '8, 6'
+      }
+    }).addTo(capaDesvios);
+  });
 
-// ---------- Desvíos ----------
-function limpiarDesvio() {
-  if (capaDesvio) {
-    mapa.removeLayer(capaDesvio);
-    capaDesvio = null;
+  const limites = capaDesvios.getBounds();
+  if (limites.isValid()) {
+    mapa.fitBounds(limites, { padding: [30, 30], maxZoom: 16 });
   }
 }
 
-function seleccionarIncidente(inc) {
-  limpiarDesvio();
-  mapa.setView([inc.lat, inc.lng], Math.max(mapa.getZoom(), 16));  // resalta el punto
-  let html = fichaHTML(inc);
+function actualizarDesvioSeleccionado() {
+  const aviso = document.getElementById('aviso-desvio');
+  if (!incidenteSeleccionado || incidenteSeleccionado.origen === 'ciudadano') {
+    dibujarDesvio(null);
+    if (aviso && incidenteSeleccionado) {
+      aviso.textContent = 'Este reporte ciudadano no tiene un desvío asociado.';
+    }
+    return;
+  }
 
-  if (inc.severidad === 'amarilla') {
-    html += '<p>Este punto no requiere desvío.</p>';
-  } else if (inc.origen === 'ciudadano') {
-    html += '<p class="aviso">⚠️ Desvío sin verificar</p>';
-  } else {
-    const vehiculo = document.getElementById('filtro-vehiculo').value;
-    const aptos = desviosPara(inc.id, vehiculo);
-
-    if (aptos.length === 0) {
-      html += '<p class="aviso">No hay desvío verificado apto para este tipo de vehículo.</p>';
+  const vehiculo = document.getElementById('filtro-vehiculo').value;
+  const desvios = desviosPara(incidenteSeleccionado.id, vehiculo);
+  dibujarDesvio(desvios);
+  if (aviso) {
+    if (desvios.length) {
+      aviso.textContent = 'Desvío disponible marcado en azul.';
     } else {
-      // L.geoJSON convierte [lng, lat] a [lat, lng] por su cuenta
-      capaDesvio = L.geoJSON(aptos, { style: { color: '#1976d2', weight: 5 } }).addTo(mapa);
-      mapa.fitBounds(capaDesvio.getBounds(), { padding: [40, 40] });
-      html += aptos.map(d =>
-        `<p>🛣️ Desvío: +${d.properties.distancia_adicional_m} m<br>
-         Verificado: ${esc(d.properties.verificado)}</p>`).join('');
+      const restricciones = restriccionesDesvioPara(incidenteSeleccionado.id, vehiculo);
+      aviso.textContent = restricciones.length
+        ? restricciones.map(desvio => desvio.properties.observaciones).join(' ')
+        : 'No hay un desvío cargado para este incidente y vehículo.';
     }
   }
-  document.getElementById('detalle').innerHTML = html;
-  window.incidenteActual = inc;
 }
 
-// Al cambiar de vehículo, se recalcula el desvío del punto elegido
-document.getElementById('filtro-vehiculo').addEventListener('change', () => {
-  if (window.incidenteActual) seleccionarIncidente(window.incidenteActual);
+document.getElementById('filtro-vehiculo').addEventListener('change', actualizarDesvioSeleccionado);
+
+mapa.on('click', () => {
+  incidenteSeleccionado = null;
+  dibujarDesvio(null);
 });
 
 // ---------- Leyenda ----------
@@ -233,8 +224,8 @@ document.getElementById('form-reporte').addEventListener('submit', (e) => {
   e.target.reset();
   limpiarFotoFormulario();
   document.getElementById('formulario').hidden = true;
-  refrescar();
-});
+  const contenedor = document.getElementById('detalle');
+  contenedor.hidden = false;
 
 document.getElementById('btn-cancelar').addEventListener('click', () => {
   document.getElementById('form-reporte').reset();
@@ -247,31 +238,26 @@ document.getElementById('btn-cancelar').addEventListener('click', () => {
   document.getElementById('formulario').hidden = true;
 });
 
-// ---------- Exportar / importar ----------
-document.getElementById('btn-exportar').addEventListener('click', exportarReportes);
-document.getElementById('btn-importar').addEventListener('click', () =>
-  document.getElementById('archivo-importar').click());
+  contenedor.innerHTML = `
+    <h3>${inc.via || 'Reporte ciudadano'} (${inc.severidad.toUpperCase()})</h3>
+    <p><strong>Tipo:</strong> ${inc.tipo}</p>
+    <p><strong>Sentido afectado:</strong> ${inc.sentido_afectado}</p>
+    <p><strong>Horario crítico:</strong> ${inc.horario_critico || 'No especificado'}</p>
+    <p><strong>Verificado:</strong> ${inc.verificado || 'Reporte ciudadano'}</p>
+    <p>${inc.descripcion}</p>
+    ${inc.foto ? `<img src="${rutaFoto}" alt="Evidencia" style="width:100%; margin-top:8px; border-radius:6px;">` : ''}
+    <hr style="margin: 10px 0;">
+    <p id="aviso-desvio"></p>
+  `;
 
-document.getElementById('archivo-importar').addEventListener('change', (e) => {
-  const archivo = e.target.files[0];
-  if (!archivo) return;
-  importarReportes(archivo, (agregados) => {
-    refrescar();
-    alert(agregados + ' reporte(s) nuevo(s) importado(s).');
-  });
-  e.target.value = '';
-});
+  actualizarDesvioSeleccionado();
 
-// ---------- Arranque ----------
-async function iniciar() {
-  try {
-    await cargarIncidentesCampo();
-    await cargarDesvios();
-    await iniciarBuscador();
-    refrescar();
-  } catch (e) {
-    console.error(e);
-    alert('No se pudieron cargar los datos. ¿Abriste el proyecto con Live Server?');
+  if (inc.origen === 'ciudadano') {
+    const botonEliminar = document.createElement('button');
+    botonEliminar.type = 'button';
+    botonEliminar.className = 'btn-eliminar';
+    botonEliminar.textContent = 'Eliminar reporte';
+    botonEliminar.addEventListener('click', () => eliminarReporteCiudadano(inc.id));
+    contenedor.appendChild(botonEliminar);
   }
 }
-iniciar();
