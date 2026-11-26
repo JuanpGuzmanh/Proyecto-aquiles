@@ -1,99 +1,135 @@
-const mapa = L.map('mapa').setView([11.2268, -74.1871], 15);
+// ---------- Configuración (ajusten con su corredor) ----------
+const CENTRO = [11.2212, -74.1774];
+const SECTOR = L.latLngBounds([11.212, -74.188], [11.230, -74.167]);
+const COLORES = { roja: '#d32f2f', naranja: '#f57c00', amarilla: '#fbc02d' };
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+// ---------- Mapa base con OpenStreetMap ----------
+const mapa = L.map('mapa').setView(CENTRO, 16);
+
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
-  attribution: '&copy; OpenStreetMap contributors'
+  attribution: '&copy; Colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(mapa);
 
-const capaMarcadores = L.layerGroup().addTo(mapa);
-const capaDesvios = L.layerGroup().addTo(mapa);
-let incidenteSeleccionado = null;
+const capaIncidentes = L.layerGroup().addTo(mapa);
+let capaDesvio = null;
+let puntoPendiente = null;
 
-function obtenerColorSeveridad(severidad) {
-  const colores = {
-    roja: '#dc2626',
-    naranja: '#f97316',
-    amarilla: '#eab308'
-  };
-  return colores[severidad] || '#64748b';
+// ---------- Utilidades ----------
+function esc(texto) {
+  const d = document.createElement('div');
+  d.textContent = texto ?? '';
+  return d.innerHTML;
 }
 
-function dibujarIncidentes(incidentes) {
-  capaMarcadores.clearLayers();
-  document.getElementById('contador').textContent = incidentes.length;
+const NOMBRE_SEVERIDAD = { roja: 'Cierre total', naranja: 'Un carril', amarilla: 'Deterioro de la vía' };
 
-  incidentes.forEach((inc) => {
-    const color = obtenerColorSeveridad(inc.severidad);
+function fichaHTML(inc) {
+  const verificado = inc.verificado
+    ? `Verificado: ${esc(inc.verificado)}`
+    : (inc.fecha_reporte ? `Reportado: ${esc(inc.fecha_reporte)}` : '<em>Sin verificar</em>');
 
-    const marcador = L.circleMarker([inc.lat, inc.lng], {
-      radius: 10,
-      fillColor: color,
-      color: '#ffffff',
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 0.9,
-      bubblingMouseEvents: false
-    });
+  const rutaFoto = inc.foto
+    ? (inc.foto.startsWith('data:image') || inc.foto.startsWith('datos/') ? inc.foto : `datos/${inc.foto}`)
+    : '';
 
-    marcador.on('click', () => {
-      mostrarDetalleEnPanel(inc);
-    });
-
-    marcador.addTo(capaMarcadores);
-  });
+  return `
+    <div class="ficha">
+      <span class="chip chip-${esc(inc.severidad)}">${NOMBRE_SEVERIDAD[inc.severidad] || ''}</span>
+      <strong class="ficha-via">${esc(inc.via)}</strong>
+      <span class="ficha-dato">Sentido: ${esc(inc.sentido_afectado)}</span>
+      ${inc.horario_critico ? `<span class="ficha-dato">Horario crítico: ${esc(inc.horario_critico)}</span>` : ''}
+      ${inc.impacto ? `<span class="ficha-dato">Impacto: ${esc(inc.impacto)}</span>` : ''}
+      <span class="ficha-dato">${esc(inc.descripcion)}</span>
+      <span class="ficha-dato">${verificado}</span>
+      ${rutaFoto ? `<img src="${esc(rutaFoto)}" alt="Foto del punto" onerror="this.style.display='none'">` : ''}
+    </div>`;
 }
 
-function dibujarDesvio(featureGeoJSON) {
-  capaDesvios.clearLayers();
-  if (!featureGeoJSON) return;
-
-  const desvios = Array.isArray(featureGeoJSON) ? featureGeoJSON : [featureGeoJSON];
-  desvios.forEach((desvio) => {
-    L.geoJSON(desvio, {
-      style: {
-        color: '#0284c7',
-        weight: 5,
-        dashArray: '8, 6'
-      }
-    }).addTo(capaDesvios);
+// ---------- Marcadores ----------
+function dibujarIncidente(inc) {
+  const marcador = L.circleMarker([inc.lat, inc.lng], {
+    radius: 11,
+    color: '#fff',
+    weight: 3,
+    fillColor: COLORES[inc.severidad] || '#64748b',
+    fillOpacity: 0.95,
+    className: 'marcador',
+    bubblingMouseEvents: false
   });
+  marcador.bindPopup(fichaHTML(inc));
+  marcador.on('click', () => seleccionarIncidente(inc));
+  marcador.addTo(capaIncidentes);
+}
 
-  const limites = capaDesvios.getBounds();
-  if (limites.isValid()) {
-    mapa.fitBounds(limites, { padding: [30, 30], maxZoom: 16 });
+function refrescar() {
+  capaIncidentes.clearLayers();
+  const lista = todosLosIncidentes();
+  lista.forEach(dibujarIncidente);
+  document.getElementById('contador').textContent = lista.length;
+}
+
+// ---------- Desvíos ----------
+function limpiarDesvio() {
+  if (capaDesvio) {
+    mapa.removeLayer(capaDesvio);
+    capaDesvio = null;
   }
 }
 
-function actualizarDesvioSeleccionado() {
-  const aviso = document.getElementById('aviso-desvio');
-  if (!incidenteSeleccionado || incidenteSeleccionado.origen === 'ciudadano') {
-    dibujarDesvio(null);
-    if (aviso && incidenteSeleccionado) {
-      aviso.textContent = 'Este reporte ciudadano no tiene un desvío asociado.';
-    }
-    return;
-  }
+function seleccionarIncidente(inc) {
+  limpiarDesvio();
+  mapa.setView([inc.lat, inc.lng], Math.max(mapa.getZoom(), 16));
+  let html = fichaHTML(inc);
 
-  const vehiculo = document.getElementById('filtro-vehiculo').value;
-  const desvios = desviosPara(incidenteSeleccionado.id, vehiculo);
-  dibujarDesvio(desvios);
-  if (aviso) {
-    if (desvios.length) {
-      aviso.textContent = 'Desvío disponible marcado en azul.';
+  if (inc.severidad === 'amarilla') {
+    html += '<p>Este punto no requiere desvío.</p>';
+  } else if (inc.origen === 'ciudadano') {
+    html += '<p class="aviso">⚠️ Desvío sin verificar</p>';
+  } else {
+    const vehiculo = document.getElementById('filtro-vehiculo').value;
+    const aptos = desviosPara(inc.id, vehiculo);
+
+    if (aptos.length === 0) {
+      const restricciones = typeof restriccionesDesvioPara === 'function'
+        ? restriccionesDesvioPara(inc.id, vehiculo)
+        : [];
+      const mensaje = restricciones.length
+        ? restricciones.map(d => esc(d.properties.observaciones)).join(' ')
+        : 'No hay desvío verificado apto para este tipo de vehículo.';
+      html += `<p class="aviso">${mensaje}</p>`;
     } else {
-      const restricciones = restriccionesDesvioPara(incidenteSeleccionado.id, vehiculo);
-      aviso.textContent = restricciones.length
-        ? restricciones.map(desvio => desvio.properties.observaciones).join(' ')
-        : 'No hay un desvío cargado para este incidente y vehículo.';
+      capaDesvio = L.geoJSON(aptos, { style: { color: '#1976d2', weight: 5 } }).addTo(mapa);
+      mapa.fitBounds(capaDesvio.getBounds(), { padding: [40, 40] });
+      html += aptos.map(d =>
+        `<p>🛣️ Desvío: +${d.properties.distancia_adicional_m} m<br>
+         Verificado: ${esc(d.properties.verificado)}</p>`).join('');
     }
   }
+
+  const contenedorDetalle = document.getElementById('detalle');
+  contenedorDetalle.innerHTML = html;
+
+  if (inc.origen === 'ciudadano') {
+    const btnEliminar = document.createElement('button');
+    btnEliminar.type = 'button';
+    btnEliminar.className = 'btn-eliminar';
+    btnEliminar.textContent = 'Eliminar reporte';
+    btnEliminar.addEventListener('click', () => {
+      if (eliminarReporteCiudadano(inc.id)) {
+        window.incidenteActual = null;
+        contenedorDetalle.innerHTML = '<p>Haz clic en un punto del mapa para ver su detalle.</p>';
+        refrescar();
+      }
+    });
+    contenedorDetalle.appendChild(btnEliminar);
+  }
+
+  window.incidenteActual = inc;
 }
 
-document.getElementById('filtro-vehiculo').addEventListener('change', actualizarDesvioSeleccionado);
-
-mapa.on('click', () => {
-  incidenteSeleccionado = null;
-  dibujarDesvio(null);
+document.getElementById('filtro-vehiculo').addEventListener('change', () => {
+  if (window.incidenteActual) seleccionarIncidente(window.incidenteActual);
 });
 
 // ---------- Leyenda ----------
@@ -132,6 +168,7 @@ let fotoPendiente = '';
 
 function mostrarErrorFoto(mensaje) {
   const el = document.getElementById('error-foto');
+  if (!el) return;
   if (!mensaje) {
     el.textContent = '';
     el.hidden = true;
@@ -143,22 +180,36 @@ function mostrarErrorFoto(mensaje) {
 
 function limpiarFotoFormulario() {
   fotoPendiente = '';
-  document.getElementById('input-camara').value = '';
-  document.getElementById('input-galeria').value = '';
-  document.getElementById('img-preview').src = '';
-  document.getElementById('contenedor-preview').hidden = true;
+  const inCam = document.getElementById('input-camara');
+  const inGal = document.getElementById('input-galeria');
+  const imgPrev = document.getElementById('img-preview');
+  const contPrev = document.getElementById('contenedor-preview');
+  if (inCam) inCam.value = '';
+  if (inGal) inGal.value = '';
+  if (imgPrev) imgPrev.src = '';
+  if (contPrev) contPrev.hidden = true;
   mostrarErrorFoto('');
 }
 
-document.getElementById('btn-camara').addEventListener('click', () => {
-  document.getElementById('input-camara').click();
-});
+const btnCamara = document.getElementById('btn-camara');
+const btnGaleria = document.getElementById('btn-galeria');
+const btnQuitarFoto = document.getElementById('btn-quitar-foto');
+const inputCamara = document.getElementById('input-camara');
+const inputGaleria = document.getElementById('input-galeria');
 
-document.getElementById('btn-galeria').addEventListener('click', () => {
-  document.getElementById('input-galeria').click();
-});
+if (btnCamara && inputCamara) {
+  btnCamara.addEventListener('click', () => inputCamara.click());
+  inputCamara.addEventListener('change', procesarArchivoFoto);
+}
 
-document.getElementById('btn-quitar-foto').addEventListener('click', limpiarFotoFormulario);
+if (btnGaleria && inputGaleria) {
+  btnGaleria.addEventListener('click', () => inputGaleria.click());
+  inputGaleria.addEventListener('change', procesarArchivoFoto);
+}
+
+if (btnQuitarFoto) {
+  btnQuitarFoto.addEventListener('click', limpiarFotoFormulario);
+}
 
 async function procesarArchivoFoto(e) {
   const archivo = e.target.files[0];
@@ -190,9 +241,6 @@ async function procesarArchivoFoto(e) {
   }
 }
 
-document.getElementById('input-camara').addEventListener('change', procesarArchivoFoto);
-document.getElementById('input-galeria').addEventListener('change', procesarArchivoFoto);
-
 mapa.on('click', (e) => {
   if (!SECTOR.contains(e.latlng)) {
     alert('Ese punto está fuera del sector.');
@@ -207,6 +255,7 @@ mapa.on('click', (e) => {
 
 document.getElementById('form-reporte').addEventListener('submit', (e) => {
   e.preventDefault();
+  if (!puntoPendiente) return;
   const f = e.target.elements;
   const error = guardarReporte({
     tipo: f.tipo.value,
@@ -224,8 +273,8 @@ document.getElementById('form-reporte').addEventListener('submit', (e) => {
   e.target.reset();
   limpiarFotoFormulario();
   document.getElementById('formulario').hidden = true;
-  const contenedor = document.getElementById('detalle');
-  contenedor.hidden = false;
+  refrescar();
+});
 
 document.getElementById('btn-cancelar').addEventListener('click', () => {
   document.getElementById('form-reporte').reset();
@@ -233,31 +282,31 @@ document.getElementById('btn-cancelar').addEventListener('click', () => {
   document.getElementById('formulario').hidden = true;
 });
 
-document.getElementById('btn-cancelar').addEventListener('click', () => {
-  document.getElementById('form-reporte').reset();
-  document.getElementById('formulario').hidden = true;
+// ---------- Exportar / importar ----------
+document.getElementById('btn-exportar').addEventListener('click', exportarReportes);
+document.getElementById('btn-importar').addEventListener('click', () =>
+  document.getElementById('archivo-importar').click());
+
+document.getElementById('archivo-importar').addEventListener('change', (e) => {
+  const archivo = e.target.files[0];
+  if (!archivo) return;
+  importarReportes(archivo, (agregados) => {
+    refrescar();
+    alert(agregados + ' reporte(s) nuevo(s) importado(s).');
+  });
+  e.target.value = '';
 });
 
-  contenedor.innerHTML = `
-    <h3>${inc.via || 'Reporte ciudadano'} (${inc.severidad.toUpperCase()})</h3>
-    <p><strong>Tipo:</strong> ${inc.tipo}</p>
-    <p><strong>Sentido afectado:</strong> ${inc.sentido_afectado}</p>
-    <p><strong>Horario crítico:</strong> ${inc.horario_critico || 'No especificado'}</p>
-    <p><strong>Verificado:</strong> ${inc.verificado || 'Reporte ciudadano'}</p>
-    <p>${inc.descripcion}</p>
-    ${inc.foto ? `<img src="${rutaFoto}" alt="Evidencia" style="width:100%; margin-top:8px; border-radius:6px;">` : ''}
-    <hr style="margin: 10px 0;">
-    <p id="aviso-desvio"></p>
-  `;
-
-  actualizarDesvioSeleccionado();
-
-  if (inc.origen === 'ciudadano') {
-    const botonEliminar = document.createElement('button');
-    botonEliminar.type = 'button';
-    botonEliminar.className = 'btn-eliminar';
-    botonEliminar.textContent = 'Eliminar reporte';
-    botonEliminar.addEventListener('click', () => eliminarReporteCiudadano(inc.id));
-    contenedor.appendChild(botonEliminar);
+// ---------- Arranque ----------
+async function iniciar() {
+  try {
+    await cargarIncidentesCampo();
+    await cargarDesvios();
+    await iniciarBuscador();
+    refrescar();
+  } catch (e) {
+    console.error(e);
+    alert('No se pudieron cargar los datos. ¿Abriste el proyecto con Live Server?');
   }
 }
+iniciar();
